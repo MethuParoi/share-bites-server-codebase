@@ -20,20 +20,20 @@ app.use(express.json());
 app.use(cookieParser());
 
 //verify jwt token
-// const verifyToken = (req, res, next) => {
-//   const token = req?.cookies?.token;
-//   if (!token) {
-//     return res.status(403).send("A token is required for authentication");
-//   }
-//   try {
-//     const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
-//     req.user = decoded;
-//     // console.log("decoded", decoded);
-//   } catch (err) {
-//     return res.status(401).send("Invalid Token");
-//   }
-//   return next();
-// };
+const verifyToken = (req, res, next) => {
+  const token = req?.cookies?.token;
+  if (!token) {
+    return res.status(403).send("A token is required for authentication");
+  }
+  try {
+    const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
+    req.user = decoded;
+    // console.log("decoded", decoded);
+  } catch (err) {
+    return res.status(401).send("Invalid Token");
+  }
+  return next();
+};
 
 //mongoDB connection
 
@@ -52,7 +52,7 @@ async function run() {
   try {
     // await client.connect();
     // add a new movie
-    const movieCollection = client.db("share-bites").collection("food-bank");
+    const foodCollection = client.db("share-bites").collection("food-bank");
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!"
     );
