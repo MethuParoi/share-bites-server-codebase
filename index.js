@@ -88,7 +88,13 @@ async function run() {
       res.send({ success: true });
     });
 
-    //---------------------------------------------------
+    //----------------------- Add Food----------------------------
+    //add food
+    app.post("/add-food", async (req, res) => {
+      const newFood = req.body;
+      const result = await foodCollection.insertOne(newFood);
+      res.send(result);
+    });
   } catch (error) {
     console.log(error);
   }
