@@ -73,14 +73,14 @@ async function run() {
     });
 
     //logout
-    // app.post("/logout", (req, res) => {
-    //   res
-    //     .clearCookie("token", {
-    //       httpOnly: true,
-    //       secure: false,
-    //     })
-    //     .send({ success: true });
-    // });
+    app.post("/logout", (req, res) => {
+      res
+        .clearCookie("token", {
+          httpOnly: true,
+          secure: false,
+        })
+        .send({ success: true });
+    });
 
     //jwt get
     app.get("/jwt-get", async (req, res) => {
@@ -98,6 +98,13 @@ async function run() {
   } catch (error) {
     console.log(error);
   }
+
+  //get food
+  app.get("/get-food", async (req, res) => {
+    const cursor = foodCollection.find({});
+    const result = await cursor.toArray();
+    res.send(result);
+  });
 }
 run().catch(console.dir);
 
