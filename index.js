@@ -51,7 +51,7 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     // await client.connect();
-    // add a new movie
+    // add a new food
     const foodCollection = client.db("share-bites").collection("food-bank");
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!"
@@ -61,7 +61,7 @@ async function run() {
     app.post("/jwt-auth", (req, res) => {
       const { email } = req.body;
       const token = jwt.sign({ email }, process.env.ACCESS_TOKEN_SECRET, {
-        expiresIn: "1h",
+        expiresIn: "5h",
       });
       res
         .cookie("token", token, {
@@ -125,33 +125,59 @@ async function run() {
     //get single food details
     app.get("/get-food-details/:id", async (req, res) => {
       const id = req.params.id;
-      const result = await foodCollection.findOne({ _id: ObjectId(id) });
+      const objectId = new ObjectId(id);
+      const result = await foodCollection.findOne({ _id: ObjectId });
+      res.send(result);
+    });
+
+    //get sorted food by expiry date
+    app.get("/get-sorted-food", async (req, res) => {
+      const result = await foodCollection
+        .aggregate([
+          {
+            $addFields: {
+              food_expiry_date: {
+                $dateFromString: {
+                  dateString: "$expired_date",
+                },
+              },
+            },
+          },
+          {
+            $sort: { food_expiry_date: 1 },
+          },
+        ])
+        .toArray();
+      res.send(result);
+    });
+
+    //update a food
+    app.patch("/update-food/:id", async (req, res) => {
+      const id = req.params.id;
+      // Convert id to ObjectId
+      const objectId = new ObjectId(id);
+      const updatedFood = req.body;
+      const result = await foodCollection.updateOne(
+        { _id: objectId },
+        { $set: updatedFood }
+      );
+      res.send(result);
+    });
+
+    // Delete a food
+
+    app.delete("/delete-food/:id", async (req, res) => {
+      const id = req.params.id;
+      // Convert id to ObjectId
+      const objectId = new ObjectId(id);
+      const result = await foodCollection.deleteOne({ _id: objectId });
       res.send(result);
     });
   } catch (error) {
     console.log(error);
   }
 
-  //get sorted food by expiry date
-  app.get("/get-sorted-food", async (req, res) => {
-    const result = await foodCollection
-      .aggregate([
-        {
-          $addFields: {
-            food_expiry_date: {
-              $dateFromString: {
-                dateString: "$food_expiry_date",
-              },
-            },
-          },
-        },
-        {
-          $sort: { food_expiry_date: 1 },
-        },
-      ])
-      .toArray();
-    res.send(result);
-  });
+  
 }
 run().catch(console.dir);
 
