@@ -176,14 +176,26 @@ async function run() {
 
     //-------------------------------user added food-------------------------------------------
     //added food collection
-    const favoriteMovieCollection = client
+    const userFoodCollection = client
       .db("share-bites")
       .collection("user-added-food");
 
     //add food first time
     app.put("/add-user-food", async (req, res) => {
       const newUserFood = req.body;
-      const result = await favoriteMovieCollection.insertOne(newUserFood);
+      const result = await userFoodCollection.insertOne(newUserFood);
+      res.send(result);
+    });
+
+    // add food
+    app.patch("/update-user-food/:id", async (req, res) => {
+      const id = req.params.id;
+      // Convert id to ObjectId
+      const foods = req.body;
+      const result = await userFoodCollection.updateOne(
+        { user_id: id },
+        { $set: foods }
+      );
       res.send(result);
     });
 
@@ -193,7 +205,7 @@ async function run() {
       const foodId = req.params.fid; // food ID to delete
 
       try {
-        const result = await favoriteMovieCollection.updateOne(
+        const result = await userFoodCollection.updateOne(
           { user_id: userId }, // Match user by ID
           { $pull: { foods: foodId } } // Remove the specific food ID from the array
         );
@@ -206,6 +218,29 @@ async function run() {
       } catch (error) {
         console.error("Error deleting food:", error);
         res.status(500).send({ message: "Internal server error" });
+      }
+    });
+
+    //get user food
+    app.get("/get-user-food/:id", async (req, res) => {
+      const id = req.params.id;
+
+      try {
+        // Convert id to ObjectId
+        // const objectId = new ObjectId(id);
+        const result = await userFoodCollection.findOne({
+          user_id: id,
+        });
+
+        if (result) {
+          res.send(result);
+          // res.send("food found");
+        } else {
+          res.status(404).send({ message: "food not found" });
+        }
+      } catch (error) {
+        console.error("Error fetching food:", error);
+        res.status(400).send({ message: "Invalid food ID" });
       }
     });
   } catch (error) {
