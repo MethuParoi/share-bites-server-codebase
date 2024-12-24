@@ -95,14 +95,61 @@ async function run() {
       const result = await foodCollection.insertOne(newFood);
       res.send(result);
     });
+
+    //get food
+    app.get("/get-food", async (req, res) => {
+      const result = await foodCollection.find({}).toArray();
+      res.send(result);
+    });
+
+    //get featured food
+    app.get("/get-featured-food", async (req, res) => {
+      const result = await foodCollection
+        .aggregate([
+          {
+            $addFields: {
+              food_quantity_num: { $toInt: "$food_quantity" },
+            },
+          },
+          {
+            $sort: { food_quantity_num: -1 },
+          },
+          {
+            $limit: 6,
+          },
+        ])
+        .toArray();
+      res.send(result);
+    });
+
+    //get single food details
+    app.get("/get-food-details/:id", async (req, res) => {
+      const id = req.params.id;
+      const result = await foodCollection.findOne({ _id: ObjectId(id) });
+      res.send(result);
+    });
   } catch (error) {
     console.log(error);
   }
 
-  //get food
-  app.get("/get-food", async (req, res) => {
-    const cursor = foodCollection.find({});
-    const result = await cursor.toArray();
+  //get sorted food by expiry date
+  app.get("/get-sorted-food", async (req, res) => {
+    const result = await foodCollection
+      .aggregate([
+        {
+          $addFields: {
+            food_expiry_date: {
+              $dateFromString: {
+                dateString: "$food_expiry_date",
+              },
+            },
+          },
+        },
+        {
+          $sort: { food_expiry_date: 1 },
+        },
+      ])
+      .toArray();
     res.send(result);
   });
 }
