@@ -90,7 +90,10 @@ async function run() {
 
     //----------------------- Add Food----------------------------
     //add food
-    app.post("/add-food", async (req, res) => {
+    app.post("/add-food", verifyToken, async (req, res) => {
+      if (req.user.email !== req.query.email) {
+        return res.status(403).send("Not authorized");
+      }
       const newFood = req.body;
       const result = await foodCollection.insertOne(newFood);
       res.send(result);
@@ -152,7 +155,12 @@ async function run() {
     });
 
     //update a food
-    app.patch("/update-food/:id", async (req, res) => {
+    app.patch("/update-food/:id", verifyToken, async (req, res) => {
+      // Check if user is same as in the token
+      if (req.user.email !== req.query.email) {
+        return res.status(403).send("Not authorized");
+      }
+
       const id = req.params.id;
       // Convert id to ObjectId
       const objectId = new ObjectId(id);
@@ -166,7 +174,11 @@ async function run() {
 
     // Delete a food
 
-    app.delete("/delete-food/:id", async (req, res) => {
+    app.delete("/delete-food/:id", verifyToken, async (req, res) => {
+      // Check if user is same as in the token
+      if (req.user.email !== req.query.email) {
+        return res.status(403).send("Not authorized");
+      }
       const id = req.params.id;
       // Convert id to ObjectId
       const objectId = new ObjectId(id);
@@ -181,14 +193,23 @@ async function run() {
       .collection("user-added-food");
 
     //add food first time
-    app.put("/add-user-food", async (req, res) => {
+    app.put("/add-user-food", verifyToken, async (req, res) => {
+      // Check if user is same as in the token
+      if (req.user.email !== req.query.email) {
+        return res.status(403).send("Not authorized");
+      }
       const newUserFood = req.body;
       const result = await userFoodCollection.insertOne(newUserFood);
       res.send(result);
     });
 
     // add food
-    app.patch("/update-user-food/:id", async (req, res) => {
+    app.patch("/update-user-food/:id", verifyToken, async (req, res) => {
+      // Check if user is same as in the token
+      if (req.user.email !== req.query.email) {
+        return res.status(403).send("Not authorized");
+      }
+
       const id = req.params.id;
       // Convert id to ObjectId
       const foods = req.body;
@@ -200,7 +221,12 @@ async function run() {
     });
 
     // Delete user added food
-    app.delete("/delete-user-food/:id/:fid", async (req, res) => {
+    app.delete("/delete-user-food/:id/:fid", verifyToken, async (req, res) => {
+      // Check if user is same as in the token
+      if (req.user.email !== req.query.email) {
+        return res.status(403).send("Not authorized");
+      }
+
       const userId = req.params.id; // User email
       const foodId = req.params.fid; // food ID to delete
 
@@ -222,7 +248,11 @@ async function run() {
     });
 
     //get user food
-    app.get("/get-user-food/:id", async (req, res) => {
+    app.get("/get-user-food/:id", verifyToken, async (req, res) => {
+      // Check if user is same as in the token
+      if (req.user.email !== req.query.email) {
+        return res.status(403).send("Not authorized");
+      }
       const id = req.params.id;
 
       try {
@@ -251,7 +281,12 @@ async function run() {
       .collection("user-requested-food");
 
     //add requested food first time
-    app.put("/add-requested-food", async (req, res) => {
+    app.put("/add-requested-food", verifyToken, async (req, res) => {
+      // Check if user is same as in the token
+      if (req.user.email !== req.query.email) {
+        return res.status(403).send("Not authorized");
+      }
+
       const newUserFoodRequest = req.body;
       const result = await userRequestedFoodCollection.insertOne(
         newUserFoodRequest
@@ -260,7 +295,12 @@ async function run() {
     });
 
     // add requested food
-    app.patch("/update-requested-food/:id", async (req, res) => {
+    app.patch("/update-requested-food/:id", verifyToken, async (req, res) => {
+      // Check if user is same as in the token
+      if (req.user.email !== req.query.email) {
+        return res.status(403).send("Not authorized");
+      }
+
       const id = req.params.id;
       // Convert id to ObjectId
       const foods = req.body;
@@ -272,29 +312,43 @@ async function run() {
     });
 
     // Delete requested food
-    app.delete("/delete-requested-food/:id/:fid", async (req, res) => {
-      const userId = req.params.id; // User email
-      const foodId = req.params.fid; // food ID to delete
-
-      try {
-        const result = await userRequestedFoodCollection.updateOne(
-          { user_id: userId }, // Match user by ID
-          { $pull: { foods: foodId } } // Remove the specific food ID from the array
-        );
-
-        if (result.modifiedCount > 0) {
-          res.status(200).send({ message: "Food deleted" });
-        } else {
-          res.status(404).send({ message: "Food not found" });
+    app.delete(
+      "/delete-requested-food/:id/:fid",
+      verifyToken,
+      async (req, res) => {
+        // Check if user is same as in the token
+        if (req.user.email !== req.query.email) {
+          return res.status(403).send("Not authorized");
         }
-      } catch (error) {
-        console.error("Error deleting food:", error);
-        res.status(500).send({ message: "Internal server error" });
+
+        const userId = req.params.id; // User email
+        const foodId = req.params.fid; // food ID to delete
+
+        try {
+          const result = await userRequestedFoodCollection.updateOne(
+            { user_id: userId }, // Match user by ID
+            { $pull: { foods: foodId } } // Remove the specific food ID from the array
+          );
+
+          if (result.modifiedCount > 0) {
+            res.status(200).send({ message: "Food deleted" });
+          } else {
+            res.status(404).send({ message: "Food not found" });
+          }
+        } catch (error) {
+          console.error("Error deleting food:", error);
+          res.status(500).send({ message: "Internal server error" });
+        }
       }
-    });
+    );
 
     //get user requested food
-    app.get("/get-requested-food/:id", async (req, res) => {
+    app.get("/get-requested-food/:id", verifyToken, async (req, res) => {
+      // Check if user is same as in the token
+      if (req.user.email !== req.query.email) {
+        return res.status(403).send("Not authorized");
+      }
+
       const id = req.params.id;
 
       try {
