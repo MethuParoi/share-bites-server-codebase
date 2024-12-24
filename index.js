@@ -243,6 +243,78 @@ async function run() {
         res.status(400).send({ message: "Invalid food ID" });
       }
     });
+
+    //-------------------------------user requested food-------------------------------------------
+    //added food collection
+    const userRequestedFoodCollection = client
+      .db("share-bites")
+      .collection("user-requested-food");
+
+    //add requested food first time
+    app.put("/add-requested-food", async (req, res) => {
+      const newUserFoodRequest = req.body;
+      const result = await userRequestedFoodCollection.insertOne(
+        newUserFoodRequest
+      );
+      res.send(result);
+    });
+
+    // add requested food
+    app.patch("/update-requested-food/:id", async (req, res) => {
+      const id = req.params.id;
+      // Convert id to ObjectId
+      const foods = req.body;
+      const result = await userRequestedFoodCollection.updateOne(
+        { user_id: id },
+        { $set: foods }
+      );
+      res.send(result);
+    });
+
+    // Delete requested food
+    app.delete("/delete-requested-food/:id/:fid", async (req, res) => {
+      const userId = req.params.id; // User email
+      const foodId = req.params.fid; // food ID to delete
+
+      try {
+        const result = await userRequestedFoodCollection.updateOne(
+          { user_id: userId }, // Match user by ID
+          { $pull: { foods: foodId } } // Remove the specific food ID from the array
+        );
+
+        if (result.modifiedCount > 0) {
+          res.status(200).send({ message: "Food deleted" });
+        } else {
+          res.status(404).send({ message: "Food not found" });
+        }
+      } catch (error) {
+        console.error("Error deleting food:", error);
+        res.status(500).send({ message: "Internal server error" });
+      }
+    });
+
+    //get user requested food
+    app.get("/get-requested-food/:id", async (req, res) => {
+      const id = req.params.id;
+
+      try {
+        // Convert id to ObjectId
+        // const objectId = new ObjectId(id);
+        const result = await userRequestedFoodCollection.findOne({
+          user_id: id,
+        });
+
+        if (result) {
+          res.send(result);
+          // res.send("food found");
+        } else {
+          res.status(404).send({ message: "food not found" });
+        }
+      } catch (error) {
+        console.error("Error fetching food:", error);
+        res.status(400).send({ message: "Invalid food ID" });
+      }
+    });
   } catch (error) {
     console.log(error);
   }
