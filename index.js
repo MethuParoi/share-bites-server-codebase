@@ -173,6 +173,41 @@ async function run() {
       const result = await foodCollection.deleteOne({ _id: objectId });
       res.send(result);
     });
+
+    //-------------------------------user added food-------------------------------------------
+    //added food collection
+    const favoriteMovieCollection = client
+      .db("share-bites")
+      .collection("user-added-food");
+
+    //add food first time
+    app.put("/add-user-food", async (req, res) => {
+      const newUserFood = req.body;
+      const result = await favoriteMovieCollection.insertOne(newUserFood);
+      res.send(result);
+    });
+
+    // Delete user added food
+    app.delete("/delete-user-food/:id/:fid", async (req, res) => {
+      const userId = req.params.id; // User email
+      const foodId = req.params.fid; // food ID to delete
+
+      try {
+        const result = await favoriteMovieCollection.updateOne(
+          { user_id: userId }, // Match user by ID
+          { $pull: { foods: foodId } } // Remove the specific food ID from the array
+        );
+
+        if (result.modifiedCount > 0) {
+          res.status(200).send({ message: "Food deleted" });
+        } else {
+          res.status(404).send({ message: "Food not found" });
+        }
+      } catch (error) {
+        console.error("Error deleting food:", error);
+        res.status(500).send({ message: "Internal server error" });
+      }
+    });
   } catch (error) {
     console.log(error);
   }
