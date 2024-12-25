@@ -137,7 +137,7 @@ async function run() {
     app.get("/get-food-details/:id", async (req, res) => {
       const id = req.params.id;
       const objectId = new ObjectId(id);
-      const result = await foodCollection.findOne({ _id: ObjectId });
+      const result = await foodCollection.findOne({ _id: objectId });
       res.send(result);
     });
 
@@ -182,7 +182,7 @@ async function run() {
 
     // Delete a food
 
-    app.delete("/delete-food/:id", async (req, res) => {
+    app.delete("/delete-food/:id", verifyToken, async (req, res) => {
       // Check if user is same as in the token
       // if (req.user.email !== req.query.email) {
       //   return res.status(403).send("Not authorized");
@@ -229,7 +229,7 @@ async function run() {
     });
 
     //update user food
-    app.patch("/update-user-food/:id", async (req, res) => {
+    app.patch("/update-user-food/:id", verifyToken, async (req, res) => {
       // Check if user is same as in the token
       // if (req.user.email !== req.query.email) {
       //   return res.status(403).send("Not authorized");
@@ -247,7 +247,7 @@ async function run() {
     });
 
     // Delete user added food
-    app.delete("/delete-user-food/:id/:fid", async (req, res) => {
+    app.delete("/delete-user-food/:id/:fid", verifyToken, async (req, res) => {
       // Check if user is same as in the token
       // if (req.user.email !== req.query.email) {
       //   return res.status(403).send("Not authorized");
@@ -274,7 +274,7 @@ async function run() {
     });
 
     //get user food
-    app.get("/get-user-food/:id", async (req, res) => {
+    app.get("/get-user-food/:id", verifyToken, async (req, res) => {
       // Check if user is same as in the token
       // if (req.user.email !== req.query.email) {
       //   return res.status(403).send("Not authorized");
