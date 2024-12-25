@@ -10,7 +10,7 @@ const app = express();
 //use middleware
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: ["http://localhost:5173", "https://share-bites-9867f.web.app"],
     credentials: true,
     // methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
     // allowedHeaders: "Content-Type,Authorization",
@@ -19,21 +19,38 @@ app.use(
 app.use(express.json());
 app.use(cookieParser());
 
-//verify jwt token
+// Verify JWT Middleware
 const verifyToken = (req, res, next) => {
   const token = req?.cookies?.token;
+  console.log("Token received:", token);
   if (!token) {
     return res.status(403).send("A token is required for authentication");
   }
   try {
     const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
     req.user = decoded;
-    // console.log("decoded", decoded);
   } catch (err) {
     return res.status(401).send("Invalid Token");
   }
   return next();
 };
+
+//verify jwt token
+// const verifyToken = (req, res, next) => {
+//   const token = req?.cookies?.token;
+//   console.log("token", token);
+//   if (!token) {
+//     return res.status(403).send("A token is required for authentication");
+//   }
+//   try {
+//     const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
+//     req.user = decoded;
+//     // console.log("decoded", decoded);
+//   } catch (err) {
+//     return res.status(401).send("Invalid Token");
+//   }
+//   return next();
+// };
 
 //mongoDB connection
 
@@ -66,10 +83,15 @@ async function run() {
       res
         .cookie("token", token, {
           httpOnly: true,
-          secure: false, // set to true after deploying to https
+
+          //after deploying to https
+          secure: process.env.NODE_ENV === "production",
+          sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
+
+          // secure: false, // set to true after deploying to https
           // sameSite: 'none'
         })
-        .send({ success: true });
+        .send({ success: false });
     });
 
     //logout
@@ -83,17 +105,20 @@ async function run() {
     });
 
     //jwt get
-    app.get("/jwt-get", async (req, res) => {
-      console.log("cookies", req.cookies);
+    app.get("/jwt-get", verifyToken, (req, res) => {
+      // console.log("User data from token:", req.user);
+      // console.log("cookies", req.cookies.token);
       res.send({ success: true });
     });
 
-    //----------------------- Add Food----------------------------
+    //------------------ Add Food----------------------
     //add food
     app.post("/add-food", verifyToken, async (req, res) => {
-      if (req.user.email !== req.query.email) {
-        return res.status(403).send("Not authorized");
-      }
+      // if (req.user.email !== req.query.email) {
+      //   console.log("User email:", req.user.email);
+      //   console.log("Query email:", req.query.email);
+      //   return res.status(403).send("Not authorized");
+      // }
       const newFood = req.body;
       const result = await foodCollection.insertOne(newFood);
       res.send(result);
@@ -157,9 +182,9 @@ async function run() {
     //update a food
     app.patch("/update-food/:id", verifyToken, async (req, res) => {
       // Check if user is same as in the token
-      if (req.user.email !== req.query.email) {
-        return res.status(403).send("Not authorized");
-      }
+      // if (req.user.email !== req.query.email) {
+      //   return res.status(403).send("Not authorized");
+      // }
 
       const id = req.params.id;
       // Convert id to ObjectId
@@ -176,9 +201,9 @@ async function run() {
 
     app.delete("/delete-food/:id", verifyToken, async (req, res) => {
       // Check if user is same as in the token
-      if (req.user.email !== req.query.email) {
-        return res.status(403).send("Not authorized");
-      }
+      // if (req.user.email !== req.query.email) {
+      //   return res.status(403).send("Not authorized");
+      // }
       const id = req.params.id;
       // Convert id to ObjectId
       const objectId = new ObjectId(id);
@@ -195,9 +220,9 @@ async function run() {
     //add food first time
     app.put("/add-user-food", verifyToken, async (req, res) => {
       // Check if user is same as in the token
-      if (req.user.email !== req.query.email) {
-        return res.status(403).send("Not authorized");
-      }
+      // if (req.user.email !== req.query.email) {
+      //   return res.status(403).send("Not authorized");
+      // }
       const newUserFood = req.body;
       const result = await userFoodCollection.insertOne(newUserFood);
       res.send(result);
@@ -206,9 +231,9 @@ async function run() {
     // add food
     app.patch("/update-user-food/:id", verifyToken, async (req, res) => {
       // Check if user is same as in the token
-      if (req.user.email !== req.query.email) {
-        return res.status(403).send("Not authorized");
-      }
+      // if (req.user.email !== req.query.email) {
+      //   return res.status(403).send("Not authorized");
+      // }
 
       const id = req.params.id;
       // Convert id to ObjectId
@@ -223,9 +248,9 @@ async function run() {
     // Delete user added food
     app.delete("/delete-user-food/:id/:fid", verifyToken, async (req, res) => {
       // Check if user is same as in the token
-      if (req.user.email !== req.query.email) {
-        return res.status(403).send("Not authorized");
-      }
+      // if (req.user.email !== req.query.email) {
+      //   return res.status(403).send("Not authorized");
+      // }
 
       const userId = req.params.id; // User email
       const foodId = req.params.fid; // food ID to delete
@@ -250,9 +275,9 @@ async function run() {
     //get user food
     app.get("/get-user-food/:id", verifyToken, async (req, res) => {
       // Check if user is same as in the token
-      if (req.user.email !== req.query.email) {
-        return res.status(403).send("Not authorized");
-      }
+      // if (req.user.email !== req.query.email) {
+      //   return res.status(403).send("Not authorized");
+      // }
       const id = req.params.id;
 
       try {
@@ -283,9 +308,9 @@ async function run() {
     //add requested food first time
     app.put("/add-requested-food", verifyToken, async (req, res) => {
       // Check if user is same as in the token
-      if (req.user.email !== req.query.email) {
-        return res.status(403).send("Not authorized");
-      }
+      // if (req.user.email !== req.query.email) {
+      //   return res.status(403).send("Not authorized");
+      // }
 
       const newUserFoodRequest = req.body;
       const result = await userRequestedFoodCollection.insertOne(
@@ -297,9 +322,9 @@ async function run() {
     // add requested food
     app.patch("/update-requested-food/:id", verifyToken, async (req, res) => {
       // Check if user is same as in the token
-      if (req.user.email !== req.query.email) {
-        return res.status(403).send("Not authorized");
-      }
+      // if (req.user.email !== req.query.email) {
+      //   return res.status(403).send("Not authorized");
+      // }
 
       const id = req.params.id;
       // Convert id to ObjectId
@@ -317,9 +342,9 @@ async function run() {
       verifyToken,
       async (req, res) => {
         // Check if user is same as in the token
-        if (req.user.email !== req.query.email) {
-          return res.status(403).send("Not authorized");
-        }
+        // if (req.user.email !== req.query.email) {
+        //   return res.status(403).send("Not authorized");
+        // }
 
         const userId = req.params.id; // User email
         const foodId = req.params.fid; // food ID to delete
@@ -345,9 +370,9 @@ async function run() {
     //get user requested food
     app.get("/get-requested-food/:id", verifyToken, async (req, res) => {
       // Check if user is same as in the token
-      if (req.user.email !== req.query.email) {
-        return res.status(403).send("Not authorized");
-      }
+      // if (req.user.email !== req.query.email) {
+      //   return res.status(403).send("Not authorized");
+      // }
 
       const id = req.params.id;
 
@@ -372,8 +397,6 @@ async function run() {
   } catch (error) {
     console.log(error);
   }
-
-  
 }
 run().catch(console.dir);
 
