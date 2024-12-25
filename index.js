@@ -22,7 +22,7 @@ app.use(cookieParser());
 // Verify JWT Middleware
 const verifyToken = (req, res, next) => {
   const token = req?.cookies?.token;
-  console.log("Token received:", token);
+  // console.log("Token received:", token);
   if (!token) {
     return res.status(403).send("A token is required for authentication");
   }
@@ -34,23 +34,6 @@ const verifyToken = (req, res, next) => {
   }
   return next();
 };
-
-//verify jwt token
-// const verifyToken = (req, res, next) => {
-//   const token = req?.cookies?.token;
-//   console.log("token", token);
-//   if (!token) {
-//     return res.status(403).send("A token is required for authentication");
-//   }
-//   try {
-//     const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
-//     req.user = decoded;
-//     // console.log("decoded", decoded);
-//   } catch (err) {
-//     return res.status(401).send("Invalid Token");
-//   }
-//   return next();
-// };
 
 //mongoDB connection
 
@@ -199,7 +182,7 @@ async function run() {
 
     // Delete a food
 
-    app.delete("/delete-food/:id", verifyToken, async (req, res) => {
+    app.delete("/delete-food/:id", async (req, res) => {
       // Check if user is same as in the token
       // if (req.user.email !== req.query.email) {
       //   return res.status(403).send("Not authorized");
@@ -229,7 +212,7 @@ async function run() {
     });
 
     // add food
-    app.patch("/update-user-food/:id", verifyToken, async (req, res) => {
+    app.patch("/add-existing-user-food/:id", verifyToken, async (req, res) => {
       // Check if user is same as in the token
       // if (req.user.email !== req.query.email) {
       //   return res.status(403).send("Not authorized");
@@ -245,15 +228,33 @@ async function run() {
       res.send(result);
     });
 
+    //update user food
+    app.patch("/update-user-food/:id", async (req, res) => {
+      // Check if user is same as in the token
+      // if (req.user.email !== req.query.email) {
+      //   return res.status(403).send("Not authorized");
+      // }
+
+      const id = req.params.id;
+      // Convert id to ObjectId
+      const objectId = new ObjectId(id);
+      const updatedFood = req.body;
+      const result = await foodCollection.updateOne(
+        { _id: objectId },
+        { $set: updatedFood }
+      );
+      res.send(result);
+    });
+
     // Delete user added food
-    app.delete("/delete-user-food/:id/:fid", verifyToken, async (req, res) => {
+    app.delete("/delete-user-food/:id/:fid", async (req, res) => {
       // Check if user is same as in the token
       // if (req.user.email !== req.query.email) {
       //   return res.status(403).send("Not authorized");
       // }
 
       const userId = req.params.id; // User email
-      const foodId = req.params.fid; // food ID to delete
+      const foodId = parseInt(req.params.fid, 10); // food ID to delete
 
       try {
         const result = await userFoodCollection.updateOne(
@@ -273,7 +274,7 @@ async function run() {
     });
 
     //get user food
-    app.get("/get-user-food/:id", verifyToken, async (req, res) => {
+    app.get("/get-user-food/:id", async (req, res) => {
       // Check if user is same as in the token
       // if (req.user.email !== req.query.email) {
       //   return res.status(403).send("Not authorized");
