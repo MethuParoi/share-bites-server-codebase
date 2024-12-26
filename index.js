@@ -79,12 +79,14 @@ async function run() {
 
     //logout
     app.post("/logout", (req, res) => {
-      res
-        .clearCookie("token", {
-          httpOnly: true,
-          secure: false,
-        })
-        .send({ success: true });
+      res.clearCookie("token", { path: "/", httpOnly: true, secure: true });
+      res.status(200).send({ success: true });
+      // res
+      //   .clearCookie("token", {
+      //     httpOnly: true,
+      //     secure: false,
+      //   })
+      //   .send({ success: true });
     });
 
     //jwt get
