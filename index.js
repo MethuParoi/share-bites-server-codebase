@@ -134,7 +134,7 @@ async function run() {
     });
 
     //get single food details
-    app.get("/get-food-details/:id", async (req, res) => {
+    app.get("/get-food-details/:id", verifyToken, async (req, res) => {
       const id = req.params.id;
       const objectId = new ObjectId(id);
       const result = await foodCollection.findOne({ _id: objectId });
@@ -348,7 +348,7 @@ async function run() {
         // }
 
         const userId = req.params.id; // User email
-        const foodId = req.params.fid; // food ID to delete
+        const foodId = parseInt(req.params.fid, 10); // food ID to delete
 
         try {
           const result = await userRequestedFoodCollection.updateOne(
