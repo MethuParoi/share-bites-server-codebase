@@ -128,7 +128,7 @@ async function run() {
             $sort: { food_quantity_num: -1 },
           },
           {
-            $limit: 6,
+            $limit: 8,
           },
         ])
         .toArray();
