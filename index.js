@@ -136,7 +136,7 @@ async function run() {
     });
 
     //get single food details
-    app.get("/get-food-details/:id", verifyToken, async (req, res) => {
+    app.get("/get-food-details/:id", async (req, res) => {
       const id = req.params.id;
       const objectId = new ObjectId(id);
       const result = await foodCollection.findOne({ _id: objectId });
